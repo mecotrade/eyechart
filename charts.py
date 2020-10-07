@@ -16,12 +16,15 @@ class EyeChart:
     D_OFFSET_MM_LEFT = 30
     
     @abstractmethod
-    def symbol_generator(self, generator_name):
+    def symbol_renderers(self):
+        pass
+
+    @abstractmethod
+    def standard_symbols(self):
         pass
     
-    @abstractmethod
     def draw_symbol(self, draw, x, y, size, symbol):
-        pass
+        self.symbol_renderers()[symbol](draw, x, y, size)
     
     @staticmethod
     def x_positions(n, width, height, v):
@@ -31,6 +34,27 @@ class EyeChart:
         return [((EyeChart.A4_WIDTH_MM - EyeChart.TABLE_WIDTH)/2 +
                  (size + space)*k) / EyeChart.A4_WIDTH_MM * width
                 for k in range(n)], size / EyeChart.A4_HEIGHT_MM * height
+
+    def symbol_generator(self, generator_name):
+
+        if 'standard' == generator_name:
+            return SequenceGenerator(sequence=self.standard_symbols())
+        elif 'shifted' == generator_name:
+            global_shift = np.random.randint(0, len(self.standard_symbols()), 1)[0]
+            return SequenceGenerator(sequence=self.standard_symbols(), global_shift=global_shift)
+        elif 'global_shuffle' == generator_name:
+            return SequenceGenerator(sequence=self.standard_symbols(), shuffle='global')
+        elif 'line_shuffle' == generator_name:
+            return SequenceGenerator(sequence=self.standard_symbols(), shuffle='line')
+        elif 'shifted_line_shuffle' == generator_name:
+            global_shift = np.random.randint(0, len(self.standard_symbols()), 1)[0]
+            return SequenceGenerator(sequence=self.standard_symbols(), global_shift=global_shift, shuffle='line')
+        elif 'random' == generator_name:
+            return RandomGenerator(n_symbols=len(self.symbol_renderers()))
+        elif 'smart_random' == generator_name:
+            return RandomGenerator(n_symbols=len(self.symbol_renderers()), smart=True)
+        else:
+            raise NotImplementedError(generator_name)
     
     def draw_sheet(self, width, height, offsets, ns, vs, generator):
     
@@ -111,7 +135,7 @@ class EyeChart:
             print('File %s saved' % filename)
         else:        
             file, ext = os.path.splitext(filename)
-            assert ext, 'Filename should contain an extention'
+            assert ext, 'Filename should contain an extension'
             
             for i, method in enumerate([self.draw_sheet_1, self.draw_sheet_2, self.draw_sheet_3]):
                 image = method(width, height, generator)
@@ -121,35 +145,9 @@ class EyeChart:
 
 
 class LettersChart(EyeChart):
-    
-    # Ш=0, Б=1, М=2, Н=3, К=4, Ы=5, И=6
-    STANDARD_SYMBOLS = [0, 1,                            # Ш Б
-                        2, 3, 4,                         # М Н К
-                        5, 2, 1, 0,                      # Ы М Б Ш
-                       
-                        1, 5, 3, 4, 2,                   # Б Ы Н К М
-                        6, 3, 0, 2, 4,                   # И Н Ш М К
-                        3, 0, 5, 6, 4, 1,                # Н Ш Ы И К Б
-                        0, 6, 3, 1, 4, 5,                # Ш И Н Б К Ы
-                        4, 3, 0, 2, 5, 1, 6,             # К Н Ш М Ы Б И
-                        1, 4, 0, 2, 6, 5, 3,             # Б К Ш М И Ы Н
-                       
-                        3, 4, 6, 1, 2, 0, 5, 1,          # Н К И Б М Ш Ы Б
-                        0, 6, 3, 4, 2, 6, 5, 1,          # Ш И Н К М И Ы Б
-                        6, 2, 0, 5, 3, 1, 2, 4,          # И М Ш Ы Н Б М К
-                        0, 1, 4, 5, 3, 1, 2, 0, 6, 2,    # Ш Б К Ы Н Б М Ш И М
-                        2, 5, 0, 1, 6, 2, 0, 3, 4, 1,    # М Ы Ш Б И М Ш Н К Б
-                        6, 1, 5, 3, 2, 1, 6, 3, 0, 4]    # И Б Ы Н М Б И Н Ш К
-    
+
     def __init__(self, k_alt=False):
-        
-        self.symbol_func = [LettersChart.draw_sh,
-                            LettersChart.draw_b,
-                            LettersChart.draw_m,
-                            LettersChart.draw_n,
-                            LettersChart.draw_k_alt if k_alt else LettersChart.draw_k,
-                            LettersChart.draw_y,
-                            LettersChart.draw_i]
+        self.k_alt = k_alt
 
     @staticmethod
     def draw_sh(draw, x, y, size):
@@ -232,57 +230,39 @@ class LettersChart(EyeChart):
         draw.rectangle(((x + 4*width, y), (x + size, y + size)), fill='black')
         draw.polygon(((x + width, y + size), (x + 4*width, y + 1.5*width), 
                       (x + 4*width, y), (x + width, y + 3.5*width)), fill='black')
-        
-    def draw_symbol(self, draw, x, y, size, symbol):
-        self.symbol_func[symbol](draw, x, y, size)
-        
-    def symbol_generator(self, generator_name):
-    
-        if 'standard' == generator_name:
-            return SequenceGenerator(sequence=LettersChart.STANDARD_SYMBOLS)
-        elif 'shifted' == generator_name:
-            global_shift = np.random.randint(0, len(LettersChart.STANDARD_SYMBOLS), 1)[0]
-            return SequenceGenerator(sequence=LettersChart.STANDARD_SYMBOLS, global_shift=global_shift)
-        elif 'global_shuffle' == generator_name:
-            return SequenceGenerator(sequence=LettersChart.STANDARD_SYMBOLS, shuffle='global')
-        elif 'line_shuffle' == generator_name:
-            return SequenceGenerator(sequence=LettersChart.STANDARD_SYMBOLS, shuffle='line')
-        elif 'shifted_line_shuffle' == generator_name:
-            global_shift = np.random.randint(0, len(LettersChart.STANDARD_SYMBOLS), 1)[0]
-            return SequenceGenerator(sequence=LettersChart.STANDARD_SYMBOLS, global_shift=global_shift, shuffle='line')
-        elif 'random' == generator_name:
-            return RandomGenerator(n_symbols=len(self.symbol_func))
-        elif 'smart_random' == generator_name:
-            return RandomGenerator(n_symbols=len(self.symbol_func), smart=True)
-        else:
-            raise NotImplementedError(generator_name)
+
+    def symbol_renderers(self):
+        return [LettersChart.draw_sh,
+                LettersChart.draw_b,
+                LettersChart.draw_m,
+                LettersChart.draw_n,
+                LettersChart.draw_k_alt if self.k_alt else LettersChart.draw_k,
+                LettersChart.draw_y,
+                LettersChart.draw_i]
+
+    def standard_symbols(self):
+        # Ш=0, Б=1, М=2, Н=3, К=4, Ы=5, И=6
+        return [0, 1,  # Ш Б
+                2, 3, 4,  # М Н К
+                5, 2, 1, 0,  # Ы М Б Ш
+
+                1, 5, 3, 4, 2,  # Б Ы Н К М
+                6, 3, 0, 2, 4,  # И Н Ш М К
+                3, 0, 5, 6, 4, 1,  # Н Ш Ы И К Б
+                0, 6, 3, 1, 4, 5,  # Ш И Н Б К Ы
+                4, 3, 0, 2, 5, 1, 6,  # К Н Ш М Ы Б И
+                1, 4, 0, 2, 6, 5, 3,  # Б К Ш М И Ы Н
+
+                3, 4, 6, 1, 2, 0, 5, 1,  # Н К И Б М Ш Ы Б
+                0, 6, 3, 4, 2, 6, 5, 1,  # Ш И Н К М И Ы Б
+                6, 2, 0, 5, 3, 1, 2, 4,  # И М Ш Ы Н Б М К
+                0, 1, 4, 5, 3, 1, 2, 0, 6, 2,  # Ш Б К Ы Н Б М Ш И М
+                2, 5, 0, 1, 6, 2, 0, 3, 4, 1,  # М Ы Ш Б И М Ш Н К Б
+                6, 1, 5, 3, 2, 1, 6, 3, 0, 4]  # И Б Ы Н М Б И Н Ш К
 
 
 class CirclesChart(EyeChart):
 
-    # V=0, <=1, ^=2, >=3
-    STANDARD_SYMBOLS = [3, 1,                       # > <
-                        1, 2, 3,                    # < ^ >
-                        2, 3, 0, 1,                 # ^ > V <
-
-                        3, 0, 2, 1, 0,              # > V ^ < V
-                        1, 3, 2, 0, 3,              # < > ^ V >
-                        2, 1, 0, 3, 1, 2,           # ^ < V > < ^
-                        3, 2, 3, 1, 2, 3,           # > ^ > < ^ >
-                        1, 3, 0, 2, 1, 0, 1,        # < > V ^ < V <
-                        0, 2, 3, 1, 0, 3, 2,        # V ^ > < V > ^
-
-                        1, 3, 0, 3, 2, 1, 0, 3,     # < > V > ^ < V >
-                        3, 0, 2, 1, 2, 0, 3, 2,     # > V ^ < ^ V > ^
-                        0, 3, 0, 2, 1, 3, 2, 1]     # V > V ^ < > ^ <
-
-    def __init__(self):
-        
-        self.symbol_func = [CirclesChart.draw_circle_up,
-                            CirclesChart.draw_circle_right,
-                            CirclesChart.draw_circle_down,
-                            CirclesChart.draw_circle_left]
-    
     @staticmethod
     def draw_circle_up(draw, x, y, size):
         width = size / 5
@@ -310,27 +290,68 @@ class CirclesChart(EyeChart):
         draw.ellipse((x, y, x + size, y + size), fill='black', outline='black')
         draw.ellipse((x + width, y + width, x + 4*width, y + 4*width), fill='white', outline='white')
         draw.rectangle(((x, y + 2*width), (x + 2*width, y + 3*width)), fill='white', outline='white')
-        
-    def draw_symbol(self, draw, x, y, size, symbol):
-        self.symbol_func[symbol](draw, x, y, size)
-        
-    def symbol_generator(self, generator_name):
 
-        if 'standard' == generator_name:
-            return SequenceGenerator(sequence=CirclesChart.STANDARD_SYMBOLS)
-        elif 'shifted' == generator_name:
-            global_shift = np.random.randint(0, len(CirclesChart.STANDARD_SYMBOLS), 1)[0]
-            return SequenceGenerator(sequence=CirclesChart.STANDARD_SYMBOLS, global_shift=global_shift)
-        elif 'global_shuffle' == generator_name:
-            return SequenceGenerator(sequence=CirclesChart.STANDARD_SYMBOLS, shuffle='global')
-        elif 'line_shuffle' == generator_name:
-            return SequenceGenerator(sequence=CirclesChart.STANDARD_SYMBOLS, shuffle='line')
-        elif 'shifted_line_shuffle' == generator_name:
-            global_shift = np.random.randint(0, len(CirclesChart.STANDARD_SYMBOLS), 1)[0]
-            return SequenceGenerator(sequence=CirclesChart.STANDARD_SYMBOLS, global_shift=global_shift, shuffle='line')
-        elif 'random' == generator_name:
-            return RandomGenerator(n_symbols=len(self.symbol_func))
-        elif 'smart_random' == generator_name:
-            return RandomGenerator(n_symbols=len(self.symbol_func), smart=True)
-        else:
-            raise NotImplementedError(generator_name)
+    def symbol_renderers(self):
+        return [CirclesChart.draw_circle_up,
+                CirclesChart.draw_circle_right,
+                CirclesChart.draw_circle_down,
+                CirclesChart.draw_circle_left]
+
+    def standard_symbols(self):
+        # V=0, <=1, ^=2, >=3
+        return [3, 1,                       # > <
+                1, 2, 3,                    # < ^ >
+                2, 3, 0, 1,                 # ^ > V <
+
+                3, 0, 2, 1, 0,              # > V ^ < V
+                1, 3, 2, 0, 3,              # < > ^ V >
+                2, 1, 0, 3, 1, 2,           # ^ < V > < ^
+                3, 2, 3, 1, 2, 3,           # > ^ > < ^ >
+                1, 3, 0, 2, 1, 0, 1,        # < > V ^ < V <
+                0, 2, 3, 1, 0, 3, 2,        # V ^ > < V > ^
+
+                1, 3, 0, 3, 2, 1, 0, 3,     # < > V > ^ < V >
+                3, 0, 2, 1, 2, 0, 3, 2,     # > V ^ < ^ V > ^
+                0, 3, 0, 2, 1, 3, 2, 1]     # V > V ^ < > ^ <
+
+
+class EChart(EyeChart):
+
+    @staticmethod
+    def draw_e(draw, x, y, size):
+        pass
+
+    @staticmethod
+    def draw_e_turn_cw(draw, x, y, size):
+        pass
+
+    @staticmethod
+    def draw_e_upside_down(draw, x, y, size):
+        pass
+
+    @staticmethod
+    def draw_e_turn_ccw(draw, x, y, size):
+        pass
+
+    def symbol_renderers(self):
+        return [EChart.draw_e,
+                EChart.draw_e_turn_cw,
+                EChart.draw_e_upside_down,
+                EChart.draw_e_turn_ccw]
+
+    def standard_symbols(self):
+        # Е=0, М=1, Э=2, Ш=3
+        return [0, 3,                       # Е Ш
+                2, 1, 0,                    # Э М Е
+                1, 3, 0, 2,                 # М Ш Е Э
+
+                3, 2, 0, 1, 3,              # Ш Э Е М Ш
+                1, 3, 2, 0, 3,              # Э М Е Э М Е TODO
+                2, 1, 0, 3, 1, 2,           # ^ < V > < ^
+                3, 2, 3, 1, 2, 3,           # > ^ > < ^ >
+                1, 3, 0, 2, 1, 0, 1,        # < > V ^ < V <
+                0, 2, 3, 1, 0, 3, 2,        # V ^ > < V > ^
+
+                1, 3, 0, 3, 2, 1, 0, 3,     # < > V > ^ < V >
+                3, 0, 2, 1, 2, 0, 3, 2,     # > V ^ < ^ V > ^
+                0, 3, 0, 2, 1, 3, 2, 1]     # V > V ^ < > ^ <
