@@ -1,14 +1,14 @@
 import argparse
 
-from charts import LettersChart, CirclesChart
+from charts import LettersChart, CirclesChart, EChart
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-t', '--type', default='letters', choices=('letters', 'letters_k_alt', 'circles'),
+    parser.add_argument('-t', '--type', default='letters', choices=('letters', 'letters_k_alt', 'circles', 'e'),
                         help='Eyechart type: "letters" for Sivtsev-Golovin eyechart,  "letters_k_alt" '
-                             'for Sivtsev-Golovin eyechart with altered K letter, or "circles" for'
-                             'eyechart with Landolt C symbols')
+                             'for Sivtsev-Golovin eyechart with altered K letter, "circles" for'
+                             'eyechart with Landolt C symbols, or "e" for E-chart')
     parser.add_argument('-g', '--generator', default='smart_random',
                         choices=('random', 'smart_random', 'standard', 'shifted', 'global_shuffle', 'line_shuffle',
                                  'shifted_line_shuffle', ''),
@@ -30,7 +30,11 @@ if __name__ == '__main__':
         table = LettersChart()
     elif args.type == 'letters_alt_k':
         table = LettersChart(k_alt=True)
-    else:
+    elif args.type == 'circles':
         table = CirclesChart()
+    elif args.type == 'e':
+        table = EChart()
+    else:
+        raise NotImplementedError(args.type)
 
     table.save(args.generator, args.dots_per_inch, args.filename, args.single)

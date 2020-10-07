@@ -22,6 +22,10 @@ class EyeChart:
     @abstractmethod
     def standard_symbols(self):
         pass
+
+    @abstractmethod
+    def line_lengths(self):
+        pass
     
     def draw_symbol(self, draw, x, y, size, symbol):
         self.symbol_renderers()[symbol](draw, x, y, size)
@@ -91,15 +95,16 @@ class EyeChart:
     
     def draw_sheet_1(self, width, height, generator):
         return self.draw_sheet(width, height, [20, 23, 23], 
-                               [2, 3, 4], [0.1, 0.2, 0.3], generator)
+                               self.line_lengths()[:3], [0.1, 0.2, 0.3], generator)
 
     def draw_sheet_2(self, width, height, generator):
         return self.draw_sheet(width, height, [14, 23, 23, 23, 23, 23], 
-                               [5, 5, 6, 6, 7, 7], [0.4, 0.5, 0.6, 0.7, 0.8, 0.9], generator)
+                               self.line_lengths()[3:9], [0.4, 0.5, 0.6, 0.7, 0.8, 0.9], generator)
 
     def draw_sheet_3(self, width, height, generator):
-        image = self.draw_sheet(width, height, [13, 23, 23, 36, 23, 23], 
-                                [8, 8, 8, 10, 10, 10], [1.0, 1.5, 2.0, 3.0, 4.0, 5.0], generator)
+        lengths = self.line_lengths()[9:]
+        image = self.draw_sheet(width, height, [13, 23, 23, 36, 23, 23][:len(lengths)],
+                                lengths, [1.0, 1.5, 2.0, 3.0, 4.0, 5.0][:len(lengths)], generator)
     
         draw = ImageDraw.Draw(image)
         draw.rectangle(((1./EyeChart.A4_WIDTH_MM * width, 28./EyeChart.A4_HEIGHT_MM * height),
@@ -242,23 +247,28 @@ class LettersChart(EyeChart):
 
     def standard_symbols(self):
         # Ш=0, Б=1, М=2, Н=3, К=4, Ы=5, И=6
-        return [0, 1,  # Ш Б
-                2, 3, 4,  # М Н К
-                5, 2, 1, 0,  # Ы М Б Ш
+        return [0, 1,                           # Ш Б
+                2, 3, 4,                        # М Н К
+                5, 2, 1, 0,                     # Ы М Б Ш
 
-                1, 5, 3, 4, 2,  # Б Ы Н К М
-                6, 3, 0, 2, 4,  # И Н Ш М К
-                3, 0, 5, 6, 4, 1,  # Н Ш Ы И К Б
-                0, 6, 3, 1, 4, 5,  # Ш И Н Б К Ы
-                4, 3, 0, 2, 5, 1, 6,  # К Н Ш М Ы Б И
-                1, 4, 0, 2, 6, 5, 3,  # Б К Ш М И Ы Н
+                1, 5, 3, 4, 2,                  # Б Ы Н К М
+                6, 3, 0, 2, 4,                  # И Н Ш М К
+                3, 0, 5, 6, 4, 1,               # Н Ш Ы И К Б
+                0, 6, 3, 1, 4, 5,               # Ш И Н Б К Ы
+                4, 3, 0, 2, 5, 1, 6,            # К Н Ш М Ы Б И
+                1, 4, 0, 2, 6, 5, 3,            # Б К Ш М И Ы Н
 
-                3, 4, 6, 1, 2, 0, 5, 1,  # Н К И Б М Ш Ы Б
-                0, 6, 3, 4, 2, 6, 5, 1,  # Ш И Н К М И Ы Б
-                6, 2, 0, 5, 3, 1, 2, 4,  # И М Ш Ы Н Б М К
-                0, 1, 4, 5, 3, 1, 2, 0, 6, 2,  # Ш Б К Ы Н Б М Ш И М
-                2, 5, 0, 1, 6, 2, 0, 3, 4, 1,  # М Ы Ш Б И М Ш Н К Б
-                6, 1, 5, 3, 2, 1, 6, 3, 0, 4]  # И Б Ы Н М Б И Н Ш К
+                3, 4, 6, 1, 2, 0, 5, 1,         # Н К И Б М Ш Ы Б
+                0, 6, 3, 4, 2, 6, 5, 1,         # Ш И Н К М И Ы Б
+                6, 2, 0, 5, 3, 1, 2, 4,         # И М Ш Ы Н Б М К
+                0, 1, 4, 5, 3, 1, 2, 0, 6, 2,   # Ш Б К Ы Н Б М Ш И М
+                2, 5, 0, 1, 6, 2, 0, 3, 4, 1,   # М Ы Ш Б И М Ш Н К Б
+                6, 1, 5, 3, 2, 1, 6, 3, 0, 4]   # И Б Ы Н М Б И Н Ш К
+
+    def line_lengths(self):
+        return [2, 3, 4,
+                5, 5, 6, 6, 7, 7,
+                8, 8, 8, 10, 10, 10]
 
 
 class CirclesChart(EyeChart):
@@ -314,24 +324,45 @@ class CirclesChart(EyeChart):
                 3, 0, 2, 1, 2, 0, 3, 2,     # > V ^ < ^ V > ^
                 0, 3, 0, 2, 1, 3, 2, 1]     # V > V ^ < > ^ <
 
+    def line_lengths(self):
+        return [2, 3, 4,
+                5, 5, 6, 6, 7, 7,
+                8, 8, 8]
+
 
 class EChart(EyeChart):
 
     @staticmethod
     def draw_e(draw, x, y, size):
-        pass
+        width = size / 5
+        draw.rectangle(((x, y), (x + width, y + size)), fill='black')
+        draw.rectangle(((x + width, y), (x + size, y + width)), fill='black')
+        draw.rectangle(((x + width, y + 2*width), (x + size, y + 3*width)), fill='black')
+        draw.rectangle(((x + width, y + 4*width), (x + size, y + size)), fill='black')
 
     @staticmethod
     def draw_e_turn_cw(draw, x, y, size):
-        pass
+        width = size / 5
+        draw.rectangle(((x, y), (x + size, y + width)), fill='black')
+        draw.rectangle(((x, y + width), (x + width, y + size)), fill='black')
+        draw.rectangle(((x + 2*width, y + width), (x + 3*width, y + size)), fill='black')
+        draw.rectangle(((x + 4*width, y + width), (x + size, y + size)), fill='black')
 
     @staticmethod
     def draw_e_upside_down(draw, x, y, size):
-        pass
+        width = size / 5
+        draw.rectangle(((x + size - width, y), (x + size, y + size)), fill='black')
+        draw.rectangle(((x, y), (x + size - width, y + width)), fill='black')
+        draw.rectangle(((x, y + 2*width), (x + size - width, y + 3*width)), fill='black')
+        draw.rectangle(((x, y + 4*width), (x + size - width, y + size)), fill='black')
 
     @staticmethod
     def draw_e_turn_ccw(draw, x, y, size):
-        pass
+        width = size / 5
+        draw.rectangle(((x, y + size), (x + size, y + size - width)), fill='black')
+        draw.rectangle(((x, y + size - width), (x + width, y)), fill='black')
+        draw.rectangle(((x + 2*width, y + size - width), (x + 3*width, y)), fill='black')
+        draw.rectangle(((x + 4*width, y + size - width), (x + size, y)), fill='black')
 
     def symbol_renderers(self):
         return [EChart.draw_e,
@@ -346,12 +377,17 @@ class EChart(EyeChart):
                 1, 3, 0, 2,                 # М Ш Е Э
 
                 3, 2, 0, 1, 3,              # Ш Э Е М Ш
-                1, 3, 2, 0, 3,              # Э М Е Э М Е TODO
-                2, 1, 0, 3, 1, 2,           # ^ < V > < ^
-                3, 2, 3, 1, 2, 3,           # > ^ > < ^ >
-                1, 3, 0, 2, 1, 0, 1,        # < > V ^ < V <
-                0, 2, 3, 1, 0, 3, 2,        # V ^ > < V > ^
+                2, 1, 0, 2, 1, 0,           # Э М Е Э М Е
+                1, 3, 2, 3, 1, 3,           # М Ш Э Ш М Ш
+                2, 0, 1, 3, 1, 0, 2,        # Э Е М Ш М Е Э
+                3, 0, 3, 1, 0, 2, 3,        # Ш Е Ш М Е Э Ш
+                1, 3, 2, 0, 2, 3, 0,        # М Ш Э Е Э Ш Е
 
-                1, 3, 0, 3, 2, 1, 0, 3,     # < > V > ^ < V >
-                3, 0, 2, 1, 2, 0, 3, 2,     # > V ^ < ^ V > ^
-                0, 3, 0, 2, 1, 3, 2, 1]     # V > V ^ < > ^ <
+                0, 1, 0, 2, 3, 1, 0, 2,     # Е М Е Э Ш М Е Э
+                2, 1, 0, 2, 1, 0, 3, 1,     # Э М Е Э М Е Ш М
+                1, 3, 2, 1, 3, 2, 0, 3]     # М Ш Э М Ш Э Е Ш
+
+    def line_lengths(self):
+        return [2, 3, 4,
+                5, 6, 6, 7, 7, 7,
+                8, 8, 8]
