@@ -149,7 +149,7 @@ class EyeChart:
                 print('File %s saved' % image_name)
 
 
-class LettersChart(EyeChart):
+class GolovinSivtsev(EyeChart):
 
     def __init__(self, k_alt=False):
         self.k_alt = k_alt
@@ -237,13 +237,13 @@ class LettersChart(EyeChart):
                       (x + 4*width, y), (x + width, y + 3.5*width)), fill='black')
 
     def symbol_renderers(self):
-        return [LettersChart.draw_sh,
-                LettersChart.draw_b,
-                LettersChart.draw_m,
-                LettersChart.draw_n,
-                LettersChart.draw_k_alt if self.k_alt else LettersChart.draw_k,
-                LettersChart.draw_y,
-                LettersChart.draw_i]
+        return [GolovinSivtsev.draw_sh,
+                GolovinSivtsev.draw_b,
+                GolovinSivtsev.draw_m,
+                GolovinSivtsev.draw_n,
+                GolovinSivtsev.draw_k_alt if self.k_alt else GolovinSivtsev.draw_k,
+                GolovinSivtsev.draw_y,
+                GolovinSivtsev.draw_i]
 
     def standard_symbols(self):
         # Ш=0, Б=1, М=2, Н=3, К=4, Ы=5, И=6
@@ -271,7 +271,7 @@ class LettersChart(EyeChart):
                 8, 8, 8, 10, 10, 10]
 
 
-class CirclesChart(EyeChart):
+class LandoltC(EyeChart):
 
     @staticmethod
     def draw_circle_up(draw, x, y, size):
@@ -302,10 +302,10 @@ class CirclesChart(EyeChart):
         draw.rectangle(((x, y + 2*width), (x + 2*width, y + 3*width)), fill='white', outline='white')
 
     def symbol_renderers(self):
-        return [CirclesChart.draw_circle_up,
-                CirclesChart.draw_circle_right,
-                CirclesChart.draw_circle_down,
-                CirclesChart.draw_circle_left]
+        return [LandoltC.draw_circle_up,
+                LandoltC.draw_circle_right,
+                LandoltC.draw_circle_down,
+                LandoltC.draw_circle_left]
 
     def standard_symbols(self):
         # V=0, <=1, ^=2, >=3
